@@ -1,0 +1,96 @@
+.glass {
+  background: var(--ink-900);
+  border: var(--border-w) solid var(--hairline);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-off) var(--shadow-off) 0 0 var(--hairline);
+}
+
+.glass-tight {
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-off-sm) var(--shadow-off-sm) 0 0 var(--hairline);
+}
+
+.glass-button {
+  font-family: var(--font-mono);
+  font-weight: 700;
+  font-size: var(--text-sm);
+  line-height: var(--line-height-tight);
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: var(--text);
+  background: var(--ink-900);
+  border: var(--border-w-sm) solid var(--hairline);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  box-shadow: var(--shadow-off-sm) var(--shadow-off-sm) 0 0 var(--hairline);
+  transition:
+    transform 90ms ease,
+    box-shadow 90ms ease,
+    background 90ms ease,
+    color 90ms ease,
+    filter 90ms ease;
+}
+
+.glass-button:hover:not(:disabled):not([data-active='true']) {
+  background: var(--accent);
+}
+
+.glass-button:active:not(:disabled) {
+  transform: translate(var(--shadow-off-sm), var(--shadow-off-sm));
+  box-shadow: 0 0 0 0 var(--hairline);
+}
+
+.glass-button[data-active='true'] {
+  background: var(--text);
+  border-color: var(--text);
+  color: var(--accent);
+}
+
+.glass-button:disabled {
+  opacity: 0.35;
+  cursor: not-allowed;
+}
+
+/* Primary action — the single button that actually runs the simulation.
+ * Everything else in the toolbar is a secondary/view-toggle action and
+ * should never compete with this for attention: bigger type, thicker
+ * border, accent-filled by default rather than only on hover. */
+.glass-button-primary {
+  font-size: var(--text-md);
+  padding: var(--space-3) var(--space-5);
+  border-width: var(--border-w);
+  background: var(--accent);
+  box-shadow: var(--shadow-off) var(--shadow-off) 0 0 var(--hairline);
+}
+/* Specificity has to at least match .glass-button's own hover rule above
+ * (class + 2 :not() pseudo-classes) — otherwise that rule's `background:
+ * var(--accent)` would win on the background property while only this
+ * rule's `color` applies, and any pairing that puts the background and
+ * text at the same lime value leaves the label unreadable. Text/icon stay
+ * pinned to var(--text) (black) on hover; the feedback comes from
+ * darkening the fill via filter instead of flipping either color, which
+ * would otherwise reproduce the same near-invisible-text risk again. */
+.glass-button.glass-button-primary:hover:not(:disabled) {
+  background: var(--accent);
+  color: var(--text);
+  filter: brightness(0.88);
+}
+.glass-button-primary:active:not(:disabled) {
+  transform: translate(var(--shadow-off), var(--shadow-off));
+  box-shadow: 0 0 0 0 var(--hairline);
+}
+
+/* Panel/drawer toggles (e.g. "Audit") open a whole overlay, which is a
+ * different kind of "on" than a persistent view-layer toggle (Frames /
+ * Grid / Axes / Dims). Both need to read as active, but not as the SAME
+ * active — this inverts the fill (accent bg / dark text) instead of
+ * reusing the view-toggle's dark-bg/accent-text language. */
+.glass-button-panel-toggle[data-active='true'] {
+  background: var(--accent);
+  border-color: var(--hairline);
+  color: var(--text);
+}

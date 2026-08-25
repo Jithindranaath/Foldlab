@@ -1,0 +1,29 @@
+node_modules/
+dist/
+.DS_Store
+Thumbs.db
+*.log
+
+# personal Claude Code settings, not shared config
+.claude/settings.local.json
+.claude/
+
+# generated demo video (large binary, doesn't belong in git history)
+demo/
+
+# env / secrets
+.env
+.env.local
+.env.*.local
+
+# editor-local settings
+.vscode/
+.idea/
+
+# test coverage output
+coverage/
+
+#MD files
+BUILD_PROMPT.md
+DEMO_SCRIPT.md
+RECORDING.md

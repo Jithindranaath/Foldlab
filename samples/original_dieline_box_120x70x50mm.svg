@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="415mm" height="210mm" viewBox="0 0 415 210">
+  <title>Rectangular box -- 120x70x50mm original dieline, hand-authored (not derived from any sample)</title>
+  <g id="cut" stroke="#ff0000" stroke-width="0.3" fill="none">
+    <path d="M 10 80 L 80 80 M 200 80 L 270 80 M 270 80 L 390 80 M 390 80 L 405 80 M 10 130 L 80 130 M 200 130 L 270 130 M 270 130 L 390 130 M 390 130 L 405 130 M 10 80 L 10 130 M 80 10 L 80 80 M 80 130 L 80 200 M 200 10 L 200 80 M 200 130 L 200 200 M 405 80 L 405 130 M 80 10 L 200 10 M 80 200 L 200 200" />
+  </g>
+  <g id="crease" stroke="#00aa33" stroke-width="0.3" stroke-dasharray="2,1" fill="none">
+    <path d="M 80 80 L 200 80 M 80 130 L 200 130 M 80 80 L 80 130 M 200 80 L 200 130 M 270 80 L 270 130 M 390 80 L 390 130" />
+  </g>
+</svg>
