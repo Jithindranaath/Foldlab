@@ -207,8 +207,3 @@ the final minimum-panel-area filter do that job instead.
   goal, not implemented in this pass); without one, FoldLab shows the flat image and says plainly
   what it needs.
 - Board thickness is modelled as zero (a flush fold, no 0.4 mm extrude).
-
-## Recording
-
-See `RECORDING.md` for the shot list, or `DEMO_SCRIPT.md` for the full narrated walkthrough script
-that matches `demo/foldlab_demo.webm`.
