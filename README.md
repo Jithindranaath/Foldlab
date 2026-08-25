@@ -5,6 +5,75 @@ underlying geometry — panels, hinges, live dihedral angles, closure math — v
 
 Built for SiviQuantLabs Build Challenge 01.
 
+## Problem statement
+
+A packaging dieline lives as a flat 2D vector file — cut lines, crease lines, perforations — but
+nobody can look at that flat file and see the finished carton: whether the walls actually meet,
+what the real closed dimensions are, how the lock and glue flaps sit once it's folded. Checking
+that normally means opening the file in a separate CAD tool, or folding a physical proof by hand.
+
+The brief asked for a web app that ingests a **real** dieline, reconstructs the carton in 3D, and
+animates the fold closed continuously (flat → closed, never a jump cut) — with the underlying
+mathematics (panels, hinges, live dihedral angles, derived box dimensions) visible on screen the
+whole time, not a pre-baked animation standing in for real geometry.
+
+## Solution
+
+FoldLab parses the dieline's actual vector paths straight from the uploaded file — the real PDF
+operator list or SVG DOM, not a pre-baked model — classifies every stroke as a cut, crease, or
+perforation, recovers the panel rectangles and the hinge lines between them, and drives a real
+forward-kinematics fold: one parameter `t` rotating every hinge by the correct angle at every
+instant between flat and closed.
+
+The same rotation math that drives what's on screen is re-implemented independently in plain
+TypeScript and used to audit itself — perimeter identity, closure residual, and isometry drift are
+computed from the geometry and shown live, so the numbers on screen are provably derived, not just
+displayed.
+
+## What we built
+
+- **Upload** — PDF and SVG fold directly from real vector geometry; PNG/JPG are traced for a
+  colored cut/crease line network first, and fall back to artwork-only display if none is found.
+- **Parser pipeline** — pdf.js / DOMParser → segment extraction → a 3-strategy ranked classifier
+  (named colour space/layer, stroke hue, topological fallback) → lattice + union-find panel
+  decomposition → hinge graph → BFS spanning-tree fold schedule.
+- **3D viewport** (raw Three.js, no react-three-fiber) — continuous flat-to-closed fold animation,
+  full orbit/pan/zoom, a scrub slider that drives the fold parameter in both directions, click any
+  panel to swing it open on its own hinge with a camera fly-to, and once closed the camera zooms
+  in and auto-rotates on its own until you take the view back manually.
+- **Math on screen** — a world axes triad, a millimetre ground grid, per-panel local frames, live
+  dimension callouts, and an **Audit drawer** reporting perimeter identity, closure residual, and
+  isometry drift.
+- **Glassmorphism UI** throughout, and a `src/core/` layer with zero React or Three.js imports —
+  the fold math is independently testable and demonstrable on its own, without reaching into the
+  render tree.
+
+## Architecture
+
+```
+src/core/       pure TypeScript, zero React, zero Three.js — the fold math lives here
+  extract/        PDF (pdfjs-dist) and SVG (DOMParser) → raw segments + colour/layer hints
+  classify.ts     3-strategy ranked cut/crease/perf classifier
+  panels.ts       lattice + union-find panel decomposition
+  graph.ts        hinge detection (per-crease-segment, range-intersecting), BFS spanning tree
+  solver.ts       wall-chain identification, dihedral targets, depth-based stagger timing
+  kinematics.ts   pure-TS forward kinematics (Rodrigues rotation) — the audit's ground truth
+  audit.ts        closure residual, isometry drift, perimeter identity
+  pipeline.ts     orchestrates the above; shared by the main thread and the parse worker
+src/three/      PanelTree.ts (the pivot pattern), Viewport.ts, Axes/Grid/HingeOverlay/Dimensions
+src/ui/         React shell — DielineView, PanelList, FoldLedger, Scrubber, AuditDrawer
+src/state/      one flat zustand store; t is owned by React, driven by one requestAnimationFrame
+                loop in App.tsx
+src/workers/    parse.worker.ts — same pipeline.ts, off the main thread for files over 2 MB
+scripts/        measure-real-sample.ts (regenerates sampleExpectations.ts from the real PDF);
+                generate-fixtures.ts (an earlier synthetic-fixture generator, superseded once the
+                real sample arrived — kept as a self-contained example of driving the pipeline
+                end-to-end and of the SVG extraction path)
+```
+
+`core/` never imports React or Three — that boundary is what makes the fold logic testable in
+isolation and demonstrable during a code walkthrough without reaching into the render tree.
+
 ## 30-second setup
 
 ```bash
@@ -95,32 +164,6 @@ with a ranked fallback chain rather than assumed away. `zustand` for state becau
 exactly one source of truth (`t`) and didn't need more. Plain CSS custom properties over Tailwind
 because the glass aesthetic is four reusable rules, not a utility soup.
 
-## Architecture
-
-```
-src/core/       pure TypeScript, zero React, zero Three.js — the fold math lives here
-  extract/        PDF (pdfjs-dist) and SVG (DOMParser) → raw segments + colour/layer hints
-  classify.ts     3-strategy ranked cut/crease/perf classifier
-  panels.ts       lattice + union-find panel decomposition
-  graph.ts        hinge detection (per-crease-segment, range-intersecting), BFS spanning tree
-  solver.ts       wall-chain identification, dihedral targets, depth-based stagger timing
-  kinematics.ts   pure-TS forward kinematics (Rodrigues rotation) — the audit's ground truth
-  audit.ts        closure residual, isometry drift, perimeter identity
-  pipeline.ts     orchestrates the above; shared by the main thread and the parse worker
-src/three/      PanelTree.ts (the pivot pattern), Viewport.ts, Axes/Grid/HingeOverlay/Dimensions
-src/ui/         React shell — DielineView, PanelList, FoldLedger, Scrubber, AuditDrawer
-src/state/      one flat zustand store; t is owned by React, driven by one requestAnimationFrame
-                loop in App.tsx
-src/workers/    parse.worker.ts — same pipeline.ts, off the main thread for files over 2 MB
-scripts/        measure-real-sample.ts (regenerates sampleExpectations.ts from the real PDF);
-                generate-fixtures.ts (an earlier synthetic-fixture generator, superseded once the
-                real sample arrived — kept as a self-contained example of driving the pipeline
-                end-to-end and of the SVG extraction path)
-```
-
-`core/` never imports React or Three — that boundary is what makes the fold logic testable in
-isolation and demonstrable during a code walkthrough without reaching into the render tree.
-
 ## The two bugs worth naming
 
 Both were caught by cross-checking live Three.js world matrices against the pure-TS kinematics
@@ -167,4 +210,5 @@ the final minimum-panel-area filter do that job instead.
 
 ## Recording
 
-See `RECORDING.md` for the shot list.
+See `RECORDING.md` for the shot list, or `DEMO_SCRIPT.md` for the full narrated walkthrough script
+that matches `demo/foldlab_demo.webm`.
