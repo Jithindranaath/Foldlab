@@ -1,6 +1,3 @@
-// Named error types for every failure mode the pipeline can hit. Each one
-// carries a title and an actionable detail — no bare `throw new Error(msg)`.
-// See architect.md 10 for the full table this mirrors.
 
 export class FoldLabError extends Error {
   readonly title: string;

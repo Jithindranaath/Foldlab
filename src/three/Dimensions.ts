@@ -10,10 +10,6 @@ export interface DimensionsHandle {
 
 const ACCENT = '#0d0d0d';
 
-/** L/H/D leader-line callouts on the closed box, anchored to the root
- * panel's (unrotated) flat bbox. Root never moves, so these are static —
- * the caller crossfades `setOpacity` in as the fold finishes rather than
- * flipping visibility, for one continuous motion instead of a pop. */
 export function createDimensionCallouts(schedule: FoldSchedule): DimensionsHandle {
   const group = new THREE.Group();
   group.name = 'dimension-callouts';
@@ -49,7 +45,6 @@ export function createDimensionCallouts(schedule: FoldSchedule): DimensionsHandl
     sprites.push(sprite);
   }
 
-  // L (length, along X) — leader below the root panel.
   const lY = by - 12;
   addLine([new THREE.Vector3(bx, by, 0), new THREE.Vector3(bx, lY, 0)]);
   addLine([new THREE.Vector3(bx + w, by, 0), new THREE.Vector3(bx + w, lY, 0)]);

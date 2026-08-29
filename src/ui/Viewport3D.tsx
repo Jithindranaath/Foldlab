@@ -6,10 +6,7 @@ export default function Viewport3D() {
   const hostRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<Viewport | null>(null);
   const [openedPanelId, setOpenedPanelId] = useState<string | null>(null);
-  // A pure CSS opacity fade on the canvas element itself when a new sheet
-  // appears — a compositor-level fade with zero effect on the 3D scene's
-  // own materials or draw order, so it can't introduce the kind of
-  // rendering artifact a WebGL-side fade risks mid-fold.
+
   const [revealed, setRevealed] = useState(false);
 
   const schedule = useAppStore((s) => s.schedule);

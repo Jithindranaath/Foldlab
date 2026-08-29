@@ -1,12 +1,9 @@
 import type { ClassificationStrategy, LineKind, Segment, Vec2 } from './types.ts';
 
-// --- Strategy 1: named colorspace / layer -----------------------------------
-
 const CUT_NAMES = ['schneiden', 'cut', 'cutline', 'die', 'contour', 'thru-cut'];
 const CREASE_NAMES = ['rillen', 'crease', 'score', 'fold', 'rill'];
 const PERF_NAMES = ['rill-schnitt', 'perf', 'perforation', 'zipper'];
 
-/** Decodes PDF name escapes (#XX -> byte) and lowercases, e.g. "Rill-Schnitt#2010x10". */
 export function decodePdfName(name: string): string {
   const decoded = name.replace(/#([0-9A-Fa-f]{2})/g, (_, hex: string) =>
     String.fromCharCode(parseInt(hex, 16))
@@ -21,8 +18,6 @@ export function classifyByName(name: string): LineKind | null {
   if (CREASE_NAMES.some((s) => n.includes(s))) return 'crease';
   return null;
 }
-
-// --- Strategy 2: stroke hue ---------------------------------------------------
 
 export interface Rgb {
   r: number;
@@ -50,14 +45,12 @@ function rgbToHsv(rgb: Rgb): { h: number; s: number; v: number } {
 
 export function classifyByHue(rgb: Rgb): LineKind | null {
   const { h, s, v } = rgbToHsv(rgb);
-  if (s < 0.25 || v < 0.2) return null; // too grey/dark to trust hue
+  if (s < 0.25 || v < 0.2) return null;
   if (h < 25 || h > 335) return 'cut';
   if (h > 85 && h < 170) return 'crease';
   if (h > 180 && h < 265) return 'perf';
   return null;
 }
-
-// --- Strategy 3: topological fallback -----------------------------------------
 
 function segLength(s: Segment): number {
   return Math.hypot(s.b.x - s.a.x, s.b.y - s.a.y);

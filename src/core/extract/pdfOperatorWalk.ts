@@ -1,10 +1,4 @@
-// Pure conversion from a pdf.js operator list to raw segments: CTM tracking,
-// path construction, colour tracking. Deliberately takes `opList`/`OPS` as
-// plain data/parameters rather than importing pdfjs-dist itself, so it has
-// no dependency on Vite's `?url` worker import — extract/pdf.ts (browser,
-// via pdfjs-dist + a real worker) and scripts/measure-real-sample.ts
-// (Node, via pdfjs-dist's Node build) both call this same function after
-// obtaining an operator list their own way. One implementation either way.
+
 import { flattenCubicBezier } from '../bezier.ts';
 import { ptToMm } from '../units.ts';
 import type { Vec2 } from '../types.ts';
@@ -32,10 +26,6 @@ function isNumberArray(v: unknown): v is number[] {
   return Array.isArray(v) && v.every((x) => typeof x === 'number');
 }
 
-/** pdf.js emits colour operator args as typed arrays (e.g. Uint8ClampedArray
- * for RGB), not plain Array — Array.isArray is false for those, so a plain
- * isNumberArray check silently drops every colour update. Accept anything
- * indexable with the right length instead. */
 function asNumericTuple(v: unknown, length: number): number[] | null {
   if (v == null || typeof v !== 'object') return null;
   const arrLike = v as ArrayLike<unknown>;

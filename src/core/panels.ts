@@ -1,23 +1,6 @@
 import type { LineKind, Panel, Segment, Vec2 } from './types.ts';
 import { MIN_PANEL_AREA_MM2, SNAP_EPS_MM, snap } from './units.ts';
 
-// Lattice + union-find panel decomposition (spec.md 6.3):
-//
-//   1. Snap every endpoint to a grid.
-//   2. Take unique X and unique Y from all straight segments -> a cell lattice.
-//   3. A cell is material if its centre is inside the cut contour (even-odd
-//      ray cast against CUT segments only).
-//   4. Union-find merge orthogonally adjacent material cells whose shared
-//      edge is not covered by any cut/crease/perf segment. This is what
-//      absorbs slivers thinner than a sensible minimum panel thickness: a
-//      thin grid column from a chamfer or notch elsewhere on the sheet
-//      merges right back into its neighbour wherever nothing actually
-//      separates them, rather than being pre-filtered out (which would
-//      leave a hole and fragment whatever real panel happens to share that
-//      column elsewhere in Y).
-//   5. Each union set is a panel (discard < MIN_PANEL_AREA_MM2).
-//   6. Trace each panel's cell boundary, collapse collinear vertices.
-
 interface SnappedSegment {
   a: Vec2;
   b: Vec2;
@@ -46,7 +29,6 @@ function uniqueSorted(values: number[]): number[] {
   return out;
 }
 
-/** Even-odd ray cast in +X from `p`, against `segments` only. */
 function pointInside(p: Vec2, segments: SnappedSegment[]): boolean {
   let crossings = 0;
   for (const s of segments) {
@@ -59,8 +41,6 @@ function pointInside(p: Vec2, segments: SnappedSegment[]): boolean {
   return crossings % 2 === 1;
 }
 
-/** True if the edge from (x0,y) to (x1,y) [or (x,y0)-(x,y1)] is covered by
- * some segment lying exactly along that same line, overlapping the span. */
 function edgeCovered(
   p0: Vec2,
   p1: Vec2,
@@ -123,14 +103,12 @@ function collapseCollinear(polygon: Vec2[]): Vec2[] {
     const len1 = Math.hypot(d1x, d1y);
     const len2 = Math.hypot(d2x, d2y);
     if (len1 < 1e-9 || len2 < 1e-9) continue;
-    if (Math.abs(cross) / (len1 * len2) < 1e-9) continue; // collinear, drop cur
+    if (Math.abs(cross) / (len1 * len2) < 1e-9) continue;
     out.push(cur);
   }
   return out.length >= 3 ? out : polygon;
 }
 
-/** Traces the outer boundary of a set of unit lattice cells (given as their
- * rectangle corners) by walking shared/unshared edges via a half-edge count. */
 function traceBoundary(cellRects: { x0: number; x1: number; y0: number; y1: number }[]): Vec2[] {
   type Edge = { a: Vec2; b: Vec2 };
   const edgeKey = (a: Vec2, b: Vec2): string =>

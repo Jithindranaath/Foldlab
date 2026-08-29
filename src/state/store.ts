@@ -97,12 +97,6 @@ export const useAppStore = create<AppState>((set, get) => ({
         fullCtx?.drawImage(bitmap, 0, 0);
         const url = fullCanvas.toDataURL('image/png');
 
-        // Try to trace real cut/crease/perf geometry out of the image first
-        // — only a photo, scan, or plain artwork (no colored line network)
-        // falls through to the older artwork-only texture mode below.
-        // Classification reads this full-resolution ImageData (rasterVector.ts
-        // downscales only the binary ink masks afterward, which can't drop a
-        // thin stroke the way resampling the color image up front would).
         let geometry: Awaited<ReturnType<typeof runRasterPipeline>> | null = null;
         try {
           if (!fullCtx) throw new Error('Canvas 2D context unavailable');

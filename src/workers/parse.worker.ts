@@ -1,8 +1,4 @@
-// Runs extract -> classify -> panels -> graph -> solver -> audit off the
-// main thread for files over 2 MB (state/store.ts decides the threshold).
-// Same pipeline.ts as the inline path — one implementation, two hosts — and
-// the result is plain data (numbers/strings/arrays/objects only), so it
-// survives structured clone without a DataCloneError.
+
 import { runVectorPipeline } from '../core/pipeline.ts';
 import { FoldLabError } from '../core/errors.ts';
 

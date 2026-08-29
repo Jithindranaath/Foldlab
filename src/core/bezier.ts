@@ -7,7 +7,6 @@ function lerp(a: Vec2, b: Vec2, t: number): Vec2 {
   return { x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t };
 }
 
-/** Perpendicular distance from p to the line through a-b (or to a, if a==b). */
 function pointLineDistance(p: Vec2, a: Vec2, b: Vec2): number {
   const dx = b.x - a.x;
   const dy = b.y - a.y;
@@ -47,11 +46,6 @@ function subdivide(
   subdivide(p0123, p123, p23, p3, depth + 1, out);
 }
 
-/**
- * Flattens a cubic Bezier into a polyline (excluding the start point p0) using
- * adaptive subdivision against a chord-deviation tolerance, capped in recursion
- * depth so a degenerate curve cannot hang the parser.
- */
 export function flattenCubicBezier(p0: Vec2, p1: Vec2, p2: Vec2, p3: Vec2): Vec2[] {
   const out: Vec2[] = [];
   subdivide(p0, p1, p2, p3, 0, out);

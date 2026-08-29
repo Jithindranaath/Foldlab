@@ -20,18 +20,6 @@ interface Claim {
   hi: number;
 }
 
-/**
- * Two panels are hinged when they share a crease/perforation segment of
- * length >= MIN_HINGE_LENGTH_MM. For each crease/perf segment C, every panel
- * with a boundary edge collinear with C claims the sub-range of C its edge
- * actually overlaps. A hinge exists between two panels only where their
- * claims on the SAME segment overlap each other — not merely where each
- * panel happens to have some edge collinear with C's infinite line. This
- * matters: on a wall chain, opposite walls (e.g. front and back) often sit
- * on the same vertical grid line as a completely unrelated crease further
- * along it, and would false-positive as hinged if range overlap weren't
- * required in addition to collinearity.
- */
 export function buildHingeGraph(panels: Panel[], segments: Segment[]): GraphResult {
   const creaseSegs = segments.filter((s) => s.kind === 'crease' || s.kind === 'perf');
   const panelEdges = panels.map((p) => ({ id: p.id, edges: polygonEdges(p.polygon) }));
@@ -56,7 +44,7 @@ export function buildHingeGraph(panels: Panel[], segments: Segment[]): GraphResu
       for (const e of pe.edges) {
         const crossA = Math.abs((e.a.x - c.a.x) * uy - (e.a.y - c.a.y) * ux);
         const crossB = Math.abs((e.b.x - c.a.x) * uy - (e.b.y - c.a.y) * ux);
-        if (crossA > SNAP_EPS_MM || crossB > SNAP_EPS_MM) continue; // not collinear with C
+        if (crossA > SNAP_EPS_MM || crossB > SNAP_EPS_MM) continue;
 
         const t0 = (e.a.x - c.a.x) * ux + (e.a.y - c.a.y) * uy;
         const t1 = (e.b.x - c.a.x) * ux + (e.b.y - c.a.y) * uy;

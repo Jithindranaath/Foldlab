@@ -7,14 +7,6 @@ function bboxCenter(panel: Panel): Vec2 {
   return { x: panel.bbox.x + panel.bbox.w / 2, y: panel.bbox.y + panel.bbox.h / 2 };
 }
 
-/**
- * Orients the hinge so that a negative rotation about it moves `child`'s
- * centroid toward -Z — i.e. "inward" — in the flat/rest frame shared by
- * every panel before folding. When the direction must flip, axisPoint is
- * moved to the opposite end of the hinge span too, so that
- * `axisPoint + axisDir * length` still identifies the same physical segment
- * (audit.ts relies on that invariant to find a hinge's far/near endpoints).
- */
 function orientAxisForInwardFold(hinge: Hinge, child: Panel): { axisPoint: Vec2; axisDir: Vec2 } {
   const centroid = bboxCenter(child);
   const vx = centroid.x - hinge.axisPoint.x;
@@ -32,15 +24,11 @@ function orientAxisForInwardFold(hinge: Hinge, child: Panel): { axisPoint: Vec2;
 
 interface ChainMember {
   panel: Panel;
-  width: number; // extent perpendicular to the chain's length axis
+  width: number;
 }
 
 const MAX_ARM_DEPTH = 4;
 
-/** Extends outward from `startId` (excluding root) through hinges whose axis
- * is parallel to `lengthAxis` and whose span closely matches `rootLen`,
- * always stepping away from where we came from. Stops at MAX_ARM_DEPTH or
- * when no further qualifying neighbour exists. */
 function walkArm(
   startId: string,
   cameFromId: string,

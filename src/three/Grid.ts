@@ -1,7 +1,5 @@
 import * as THREE from 'three';
 
-/** Millimetre ground grid: 10 mm minor lines, 50 mm major lines, fading with
- * distance via per-helper opacity/fog rather than a custom shader. */
 export function createGroundGrid(size = 400): THREE.Group {
   const group = new THREE.Group();
   group.name = 'ground-grid';
@@ -21,9 +19,7 @@ export function createGroundGrid(size = 400): THREE.Group {
   minor.position.y = -0.02;
 
   group.add(minor, major);
-  // GridHelper lies in the XZ plane by default; the fold model's flat sheet
-  // lies in XY (z=0, folding moves panels toward -z), so rotate the grid
-  // into that same plane. Viewport sets camera.up to +Z to match.
+
   group.rotation.x = Math.PI / 2;
   return group;
 }

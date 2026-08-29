@@ -1,48 +1,22 @@
-// Raster-to-geometry: turns a bitmap's line art into the same RawSegment[]
-// shape pdf.ts/svg.ts produce (position + sampled color, uncommitted to any
-// particular kind), then hands it to classify.ts's existing classifySegments
-// — the same colorspace/hue/topology fallback chain PDF and SVG already use.
-// This is deliberately color-*agnostic* at the tracing stage: a real-world
-// dieline image found on the web can use any color convention (blue cut +
-// red crease is just as common as red/green/blue), and pre-splitting pixels
-// into cut/crease/perf masks by hue before tracing — the previous design —
-// silently produced a wrong or empty box whenever an image didn't happen to
-// match classify.ts's red/green/blue assumption. Tracing one combined ink
-// network first and classifying the resulting SEGMENTS afterward means an
-// unconventional palette still falls through to the topology strategy
-// (longest closed loop = cut, everything else = crease), same as it would
-// for a PDF/SVG with unfamiliar layer colors.
-//
-// Pipeline: one combined "ink" mask (any sufficiently colored OR sufficiently
-// dark pixel, any hue) -> gap-closing -> small-speck removal -> Zhang-Suen
-// thinning to a 1px skeleton -> spur/bridge pruning -> graph trace into
-// polylines -> Douglas-Peucker simplification -> axis-snap + quantize ->
-// px -> mm via the caller's DPI -> classifySegments assigns cut/crease/perf.
+
 import { classifySegments } from '../classify.ts';
 import type { RawSegment, Rgb } from '../classify.ts';
 import type { Segment, Vec2, ClassificationStrategy } from '../types.ts';
 import type { ExtractResult } from '../types.ts';
 import { NoVectorPathsError } from '../errors.ts';
 
-const MIN_ALPHA = 40; // below this, a pixel is treated as transparent background
-const INK_MIN_SATURATION = 0.4; // a colored stroke, any hue
-const INK_MAX_VALUE_DARK = 0.35; // ...or a dark/black/grey stroke, regardless of hue
-const MIN_COMPONENT_PX = 4; // discard specks smaller than this (anti-aliasing noise)
-const MIN_SPUR_LENGTH_PX = 10; // Zhang-Suen leaves short "hair" branches at corners/junctions — prune them
-const MAX_BRIDGE_LENGTH_PX = 10; // ...and short junction-to-junction "rungs" on diagonal staircases — prune those too
-const GAP_CLOSE_RADIUS_PX = 4; // bridges small dash-gaps (nicks, anti-aliasing dropout) before thinning
-const MIN_CHAIN_LENGTH_MM = 1.5; // below this, a trace chain is pixel-level noise, not a real dieline feature
-const AXIS_SNAP_TOLERANCE_PX = 1.5; // regularizes a near-horizontal/vertical segment to exactly that (see below)
-const RASTER_SNAP_MM = 0.8; // quantizes points so independently-traced coincident edges land on the same coordinate
+const MIN_ALPHA = 40;
+const INK_MIN_SATURATION = 0.4;
+const INK_MAX_VALUE_DARK = 0.35;
+const MIN_COMPONENT_PX = 4;
+const MIN_SPUR_LENGTH_PX = 10;
+const MAX_BRIDGE_LENGTH_PX = 10;
+const GAP_CLOSE_RADIUS_PX = 4;
+const MIN_CHAIN_LENGTH_MM = 1.5;
+const AXIS_SNAP_TOLERANCE_PX = 1.5;
+const RASTER_SNAP_MM = 0.8;
 const DP_TOLERANCE_PX = 4;
-// A real dieline's cut/crease strokes are typically only 1-2px wide even in
-// a several-thousand-pixel-wide export — any meaningful downscale aliases a
-// line that thin into a staircase that Zhang-Suen then reads as dozens of
-// spurious branches. So tracing runs at full resolution by default; this
-// ceiling is only a safety valve against a pathologically huge image (product
-// photography resolutions etc.) that would otherwise hang the thinning pass —
-// blockOrDownscale (never a smoothing/blur) is used in that case since OR is
-// the one downscale operation that cannot drop a thin line's presence outright.
+
 const MAX_TRACE_DIM = 1800;
 
 export interface RasterExtractResult {
@@ -66,7 +40,6 @@ function neighborOffsets(x: number, y: number, width: number, height: number): [
   return out;
 }
 
-/** Drops connected components (8-connectivity) smaller than minSize, in place. */
 function pruneSmallComponents(mask: Uint8Array, width: number, height: number, minSize: number): void {
   const visited = new Uint8Array(width * height);
   for (let start = 0; start < mask.length; start++) {
@@ -122,7 +95,7 @@ function erode(mask: Uint8Array, width: number, height: number): Uint8Array {
       let all = 1;
       const neighbors = neighborOffsets(x, y, width, height);
       if (neighbors.length < 8) {
-        all = 0; // border pixel: treat the missing neighbourhood as background
+        all = 0;
       } else {
         for (const [nx, ny] of neighbors) {
           if (!mask[ny * width + nx]) {
@@ -137,13 +110,6 @@ function erode(mask: Uint8Array, width: number, height: number): Uint8Array {
   return out;
 }
 
-/** Morphological closing (dilate then erode): bridges gaps up to ~2*radius
- * px — real dieline cut lines are commonly drawn with small "nicks" left
- * uncut (a genuine packaging convention) or rasterize with occasional
- * anti-aliasing dropout at shallow angles, both of which leave a nominally
- * continuous line as many tiny disconnected dashes. Dilating first (which
- * bridges the gaps) then eroding back by the same amount restores the
- * original line width everywhere except at the now-fused gaps. */
 function morphClose(mask: Uint8Array, width: number, height: number, radius: number): Uint8Array {
   let cur = mask;
   for (let i = 0; i < radius; i++) cur = dilate(cur, width, height);
@@ -151,7 +117,6 @@ function morphClose(mask: Uint8Array, width: number, height: number, radius: num
   return cur;
 }
 
-/** Classic Zhang-Suen thinning: reduces a binary mask to a 1px-wide skeleton. */
 function zhangSuenThin(mask: Uint8Array, width: number, height: number): Uint8Array {
   const img = mask.slice();
   const at = (x: number, y: number): number => (x < 0 || y < 0 || x >= width || y >= height ? 0 : img[y * width + x]!);
@@ -197,11 +162,6 @@ function zhangSuenThin(mask: Uint8Array, width: number, height: number): Uint8Ar
   return img;
 }
 
-/** Erases short dead-end branches Zhang-Suen leaves at corners, junctions,
- * and locally-thick spots (a well-known thinning artifact) — without this,
- * every such spur becomes a spurious extra chain/segment, badly
- * over-fragmenting the panel decomposition downstream. Repeated passes
- * because removing one spur can expose a junction as a new, shorter one. */
 function pruneSpurs(skeleton: Uint8Array, width: number, height: number, maxSpurLength: number): void {
   const degreeAt = (x: number, y: number): number => neighborOffsets(x, y, width, height).filter(([nx, ny]) => skeleton[ny * width + nx]).length;
 
@@ -226,7 +186,7 @@ function pruneSpurs(skeleton: Uint8Array, width: number, height: number, maxSpur
             stoppedAtJunction = true;
             break;
           }
-          if (d === 1) break; // isolated short fragment — both ends are endpoints
+          if (d === 1) break;
           const next = neighborOffsets(curX, curY, width, height).find(
             ([nx, ny]) => skeleton[ny * width + nx] && !(nx === prevX && ny === prevY)
           );
@@ -252,14 +212,6 @@ function pruneSpurs(skeleton: Uint8Array, width: number, height: number, maxSpur
   }
 }
 
-/** Erases short junction-to-junction bridges: a thin diagonal stroke
- * anti-aliases into a pixel staircase, and Zhang-Suen commonly thins that
- * into the main path briefly forking into two parallel 1px rails a step
- * apart before rejoining — a "ladder rung" a few px long with a real
- * junction (degree >= 3) at both ends, so pruneSpurs' dead-end check never
- * touches it. Removing the rung lets the two rails' junctions collapse back
- * into simple degree-2 pass-through points on the next pass, restoring one
- * long clean chain instead of many tiny ones. */
 function pruneBridges(skeleton: Uint8Array, width: number, height: number, maxBridgeLength: number): void {
   const degreeAt = (x: number, y: number): number => neighborOffsets(x, y, width, height).filter(([nx, ny]) => skeleton[ny * width + nx]).length;
 
@@ -282,7 +234,7 @@ function pruneBridges(skeleton: Uint8Array, width: number, height: number, maxBr
               reachedOtherJunction = !(curX === x && curY === y);
               break;
             }
-            if (d === 1) break; // dead end — a spur, not a bridge; pruneSpurs handles it
+            if (d === 1) break;
             const next = neighborOffsets(curX, curY, width, height).find(
               ([nx, ny]) => skeleton[ny * width + nx] && !(nx === prevX && ny === prevY)
             );

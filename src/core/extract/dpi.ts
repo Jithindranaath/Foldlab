@@ -1,14 +1,10 @@
-// Reads embedded pixel density from a PNG's pHYs chunk or a JPEG's JFIF APP0
-// density marker, so a raster upload can be traced to real mm instead of a
-// guess. Falls back to 96 DPI — the same unitless-px convention svg.ts
-// already uses for SVGs with no explicit unit — when no metadata is present.
 
 function readU32BE(bytes: Uint8Array, offset: number): number {
   return ((bytes[offset]! << 24) | (bytes[offset + 1]! << 16) | (bytes[offset + 2]! << 8) | bytes[offset + 3]!) >>> 0;
 }
 
 function detectPngDpi(bytes: Uint8Array): number | null {
-  let offset = 8; // past the 8-byte PNG signature
+  let offset = 8;
   while (offset + 8 <= bytes.length) {
     const length = readU32BE(bytes, offset);
     const type = String.fromCharCode(bytes[offset + 4]!, bytes[offset + 5]!, bytes[offset + 6]!, bytes[offset + 7]!);
@@ -16,17 +12,17 @@ function detectPngDpi(bytes: Uint8Array): number | null {
     if (type === 'pHYs' && dataStart + 9 <= bytes.length) {
       const ppuX = readU32BE(bytes, dataStart);
       const unit = bytes[dataStart + 8];
-      if (unit === 1 && ppuX > 0) return Math.round(ppuX * 0.0254); // pixels/metre -> DPI
+      if (unit === 1 && ppuX > 0) return Math.round(ppuX * 0.0254);
       return null;
     }
-    if (type === 'IDAT') return null; // pHYs, if present, always precedes IDAT
-    offset = dataStart + length + 4; // skip chunk data + CRC
+    if (type === 'IDAT') return null;
+    offset = dataStart + length + 4;
   }
   return null;
 }
 
 function detectJpegDpi(bytes: Uint8Array): number | null {
-  let offset = 2; // past the SOI marker
+  let offset = 2;
   while (offset + 4 <= bytes.length) {
     if (bytes[offset] !== 0xff) {
       offset++;
@@ -37,7 +33,7 @@ function detectJpegDpi(bytes: Uint8Array): number | null {
       offset += 2;
       continue;
     }
-    if (marker === 0xda) break; // start of scan data — no more metadata markers
+    if (marker === 0xda) break;
     const segLen = (bytes[offset + 2]! << 8) | bytes[offset + 3]!;
     if (marker === 0xe0 && segLen >= 14) {
       const d = offset + 4;
@@ -45,8 +41,8 @@ function detectJpegDpi(bytes: Uint8Array): number | null {
       if (isJfif) {
         const units = bytes[d + 7];
         const xDensity = (bytes[d + 8]! << 8) | bytes[d + 9]!;
-        if (units === 1 && xDensity > 0) return xDensity; // dots per inch
-        if (units === 2 && xDensity > 0) return Math.round(xDensity * 2.54); // dots per cm
+        if (units === 1 && xDensity > 0) return xDensity;
+        if (units === 2 && xDensity > 0) return Math.round(xDensity * 2.54);
       }
     }
     offset += 2 + segLen;

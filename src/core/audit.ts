@@ -27,14 +27,6 @@ function polygonEdges(polygon: Vec2[]): { a: Vec2; b: Vec2 }[] {
   return edges;
 }
 
-/**
- * The wall chain is [.., root's neighbour, root, .., far panel]. For a
- * 4-member chain with root in one of the two middle positions, the free
- * (far) edge of the immediate 1-hop neighbour on one side and the free edge
- * of the 2-hop panel on the other side both predict the same physical
- * location once the tube is closed (root's own height cancels out of the
- * arithmetic). Their 3D distance at t=1 is the closure residual.
- */
 function computeClosureResidualMm(schedule: FoldSchedule): number | null {
   if (schedule.wallChain.length !== 4) return null;
   const ri = schedule.wallChain.indexOf(schedule.root);
@@ -77,10 +69,6 @@ function computeClosureResidualMm(schedule: FoldSchedule): number | null {
   return Math.hypot(p2.x - p1.x, p2.y - p1.y, p2.z - p1.z);
 }
 
-/** Max relative change, over every panel edge and a dense sample of t, in
- * that edge's 3D length versus its flat (t=0) length. Should be ~0: every
- * hinge axis lies in both the parent and child planes, so rotation cannot
- * stretch a shared edge. */
 function computeIsometryDriftMax(schedule: FoldSchedule): number | null {
   if (schedule.panels.length === 0) return null;
   const { edgeByChild } = buildEdgeIndex(schedule);

@@ -1,9 +1,6 @@
 import { useRef, useState } from 'react';
 import { useAppStore } from '../state/store.ts';
 
-// FoldLab reads any format: PDF/SVG go through full vector extraction,
-// every image format the browser can decode gets traced for cut/crease
-// line art, and anything without a usable line network becomes artwork.
 const ACCEPT = '*/*';
 
 export default function Dropzone() {

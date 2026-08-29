@@ -7,14 +7,6 @@ interface Props {
 
 const KIND_COLOR: Record<string, string> = { cut: 'var(--cut)', crease: 'var(--crease)', perf: 'var(--perf)' };
 
-// Desired on-screen size for ruler ticks, in real CSS pixels — independent
-// of the dieline's own millimetre scale or how wide the panel happens to
-// render. The SVG's viewBox is sized in sheet millimetres (which can be a
-// few dozen mm for a small carton or 1000+ for a large one), so a fixed
-// user-unit font size looks fine on one dieline and is unreadably tiny (or
-// comically huge) on another. Converting through a live px-per-unit ratio,
-// measured off the actual rendered element, keeps tick text legible no
-// matter what shape or size of sheet is loaded.
 const TICK_FONT_PX = 10;
 const TICK_STROKE_PX = 1;
 const TICK_LENGTH_PX = 6;
@@ -40,10 +32,7 @@ export default function DielineView({ schedule }: Props) {
 
   const svgRef = useRef<SVGSVGElement>(null);
   const [pxPerUnit, setPxPerUnit] = useState(1);
-  // Margin has to grow in user-units as the sheet's real-world size grows
-  // (pxPerUnit shrinks), or the fixed-pixel tick marks/labels get clipped
-  // by the viewBox edge on a large dieline — 16 is just the floor for
-  // small sheets, matched to the original hand-picked value.
+
   const margin = Math.max(16, (TICK_LENGTH_PX + TICK_FONT_PX * 2.4) / pxPerUnit);
   const viewBoxWidth = bounds.w + margin * 2;
   const viewBoxHeight = bounds.h + margin * 2;
@@ -61,8 +50,6 @@ export default function DielineView({ schedule }: Props) {
     return () => observer.disconnect();
   }, [viewBoxWidth]);
 
-  // User-space sizes that resolve to a constant CSS pixel size once the SVG
-  // scales them by pxPerUnit — see the comment on the *_PX constants above.
   const tickFontSize = TICK_FONT_PX / pxPerUnit;
   const tickStrokeWidth = TICK_STROKE_PX / pxPerUnit;
   const tickLength = TICK_LENGTH_PX / pxPerUnit;

@@ -1,8 +1,4 @@
-// SVG vector extraction: DOMParser walk, resolving viewBox/unit scale to mm
-// and flipping the Y-down SVG frame to Y-up exactly once, here. Layer/id/
-// class hints are captured per segment as `source` for classify.ts strategy 1
-// (named colorspace/layer); the `stroke` attribute is resolved to Rgb for
-// strategy 2 (hue) as a fallback.
+
 import { flattenCubicBezier } from '../bezier.ts';
 import type { Vec2 } from '../types.ts';
 import type { RawSegment, Rgb } from '../classify.ts';
@@ -15,7 +11,7 @@ const UNIT_TO_MM: Record<string, number> = {
   in: 25.4,
   pt: 25.4 / 72,
   px: 25.4 / 96,
-  '': 25.4 / 96 // unitless SVG user units default to px at 96dpi
+  '': 25.4 / 96
 };
 
 function parseLength(value: string | null): { value: number; unit: string } | null {
@@ -146,7 +142,7 @@ function walkPathData(d: string): { a: Vec2; b: Vec2; isCurve: boolean }[] {
       segments.push({ a: cur, b: start, isCurve: false });
       cur = start;
     }
-    // Q/S/T/A are uncommon in dieline exports; not supported in v1.
+
   }
 
   return segments;
@@ -189,7 +185,7 @@ export async function extractFromSvg(text: string): Promise<{
   let curveCount = 0;
 
   function toMm(p: Vec2): Vec2 {
-    // Flip Y-down (SVG) to Y-up here, exactly once.
+
     return { x: p.x * scaleX, y: totalHeightMm - p.y * scaleY };
   }
 

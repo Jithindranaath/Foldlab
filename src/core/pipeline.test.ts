@@ -8,11 +8,6 @@ import { SAMPLE_EXPECTATIONS } from './sampleExpectations.ts';
 import { classifySegments, decodePdfName } from './classify.ts';
 import type { RawSegment } from './classify.ts';
 
-// The golden fixture is the REAL sample_dieline.pdf provided for this
-// challenge (not a synthetic stand-in) — parsed here via pdf.js's Node
-// build, through the exact same walkPdfOperatorList used by the browser
-// extractor (src/core/extract/pdf.ts), so this test exercises the real
-// production code path end to end.
 async function extractSamplePdf(): Promise<{ raw: RawSegment[] }> {
   const fs = await import('node:fs');
   const data = new Uint8Array(fs.readFileSync('public/samples/sample_dieline.pdf'));
@@ -43,8 +38,7 @@ describe('classifySegments', () => {
     const result = classifySegments([
       { a: { x: 0, y: 0 }, b: { x: 10, y: 0 }, source: '', rgb: { r: 0.9, g: 0.1, b: 0.1 } },
       { a: { x: 0, y: 0 }, b: { x: 0, y: 10 }, source: '', rgb: { r: 0.1, g: 0.8, b: 0.2 } },
-      // Measured from the real sample_dieline.pdf's perforation stroke —
-      // sits at h~197.5°, just outside a naive 200-260 band.
+
       { a: { x: 0, y: 0 }, b: { x: 0, y: 5 }, source: '', rgb: { r: 64 / 255, g: 127 / 255, b: 153 / 255 } }
     ]);
     expect(result.strategy).toBe('hue');
@@ -62,7 +56,7 @@ describe('sample_dieline.pdf golden fixture (the real provided file)', () => {
     const crease = classified.segments.filter((s) => s.kind === 'crease').length;
     const perf = classified.segments.filter((s) => s.kind === 'perf').length;
     expect({ total: classified.segments.length, cut, crease, perf }).toEqual(SAMPLE_EXPECTATIONS.segmentCounts);
-    expect(crease).toBe(17); // matches the brief's stated fact exactly
+    expect(crease).toBe(17);
     expect(perf).toBe(1);
   });
 

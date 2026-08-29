@@ -7,8 +7,6 @@ export interface TextSpriteOptions {
   scale?: number;
 }
 
-/** A billboarded text label (canvas texture on a THREE.Sprite). Always faces
- * the camera, which is what the axis/hinge/dimension labels need. */
 export function createTextSprite(text: string, opts: TextSpriteOptions = {}): THREE.Sprite {
   const fontSize = opts.fontSize ?? 48;
   const color = opts.color ?? '#e8edf7';

@@ -1,5 +1,3 @@
-// Pure geometry/data types for the FoldLab core pipeline.
-// This module (and everything else under src/core) must never import React or Three.js.
 
 export interface Vec2 {
   x: number;
@@ -19,9 +17,9 @@ export type PanelRole = 'wall' | 'endClosure' | 'tuck' | 'lock' | 'glue' | 'unkn
 
 export interface Panel {
   id: string;
-  polygon: Vec2[]; // CCW, collinear vertices collapsed
+  polygon: Vec2[];
   bbox: { x: number; y: number; w: number; h: number };
-  area: number; // mm^2
+  area: number;
   role: PanelRole;
 }
 
@@ -29,9 +27,9 @@ export interface Hinge {
   id: string;
   panelA: string;
   panelB: string;
-  axisPoint: Vec2; // a point on the crease line, in world (sheet) space
-  axisDir: Vec2; // unit vector along the crease
-  length: number; // mm
+  axisPoint: Vec2;
+  axisDir: Vec2;
+  length: number;
   kind: LineKind;
 }
 
@@ -39,18 +37,18 @@ export interface FoldEdge {
   hinge: Hinge;
   parent: string;
   child: string;
-  targetAngle: number; // radians, negative = folds inward (toward -Z of parent local frame)
+  targetAngle: number;
   depth: number;
-  start: number; // stagger start, normalised time [0,1]
-  duration: number; // normalised time
+  start: number;
+  duration: number;
 }
 
 export interface FoldSchedule {
   root: string;
   panels: Panel[];
   edges: FoldEdge[];
-  nonTreeHinges: Hinge[]; // closure constraints — measured, never driven
-  orphanPanels: string[]; // panels the hinge graph never reached
+  nonTreeHinges: Hinge[];
+  orphanPanels: string[];
   dims: { L: number; H: number; D: number; measuredPair: [number, number] };
   perimeterIdentity: {
     sumOfWidths: number;
@@ -88,9 +86,7 @@ export interface AuditReport {
   } | null;
   closureResidualMm: number | null;
   closureResidualPass: boolean;
-  /** True when the residual is fully accounted for by the measured pair's
-   * own caliper asymmetry (|measuredPair[0] - measuredPair[1]|) rather than
-   * being an unexplained parse/fold error. */
+
   closureResidualExplainedByCaliper: boolean;
   isometryDriftMax: number | null;
   isometryPass: boolean;

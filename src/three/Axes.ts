@@ -3,7 +3,6 @@ import { createTextSprite } from './TextSprite.ts';
 
 const AXIS_COLORS = { x: 0xff5c5c, y: 0x4ade80, z: 0x5b8cff };
 
-/** Right-handed world XYZ triad at the origin, with billboarded labels. */
 export function createWorldAxes(length = 60): THREE.Group {
   const group = new THREE.Group();
   group.name = 'world-axes';
